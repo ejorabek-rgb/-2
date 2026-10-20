@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Оқушы көмекшісі 3.0</title>
+<style>
+:root{--paper:#fbfaf4;--ink:#1c2b6b;--line:#cfd9ee;--mg:#d64545;--card:#fff;--text:#1d2230;--muted:#5b6275;--ok:#1f8a4c;--warn:#c2410c}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--paper:#161a26;--ink:#9db4ff;--line:#262d44;--mg:#ef7a7a;--card:#1d2233;--text:#e8eaf2;--muted:#9aa2b8;--ok:#4cc582;--warn:#f59e63}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:"Trebuchet MS",Verdana,sans-serif;color:var(--text);background:var(--paper) linear-gradient(var(--line) 1px,transparent 1px) 0 0/24px 24px;line-height:1.5;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.wrap{max-width:700px;margin:0 auto;padding:18px 14px 40px;border-left:2px solid var(--mg);min-height:100vh;background:color-mix(in srgb,var(--paper) 85%,transparent)}
+h1{font-family:Georgia,serif;font-size:1.6rem;margin:6px 0 2px;color:var(--ink)}
+.sub{margin:0 0 14px;color:var(--muted);font-size:.9rem}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+nav button,.chips button{font:inherit;padding:7px 13px;border:2px solid var(--ink);background:transparent;color:var(--ink);border-radius:20px;cursor:pointer}
+nav button[aria-selected=true]{background:var(--ink);color:var(--paper)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.chips button{font-size:.8rem;padding:3px 10px;border-width:1px}
+:focus-visible{outline:3px solid var(--mg);outline-offset:2px}
+section{display:none;background:var(--card);border:2px solid var(--ink);border-radius:6px;padding:14px;box-shadow:5px 5px 0 var(--ink)}
+section.on{display:block}
+h2{font-family:Georgia,serif;margin:0 0 8px;font-size:1.2rem;color:var(--ink)}
+#log{height:390px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px 8px}
+.m{max-width:88%;padding:8px 12px;border-radius:12px;white-space:pre-wrap}
+.bot{background:color-mix(in srgb,var(--ink) 12%,var(--card));align-self:flex-start;border-bottom-left-radius:2px}
+.me{background:var(--ink);color:var(--paper);align-self:flex-end;border-bottom-right-radius:2px}
+.ill{display:block;width:200px;max-width:100%;margin:6px 0;color:var(--ink);background:var(--card);border-radius:8px;padding:4px}
+a.v{display:inline-block;margin-top:4px;color:var(--ink);font-weight:bold}
+.row,.g2{display:flex;gap:8px}.g2>*{flex:1}
+input,select{font:inherit;width:100%;padding:8px;border:2px solid var(--ink);border-radius:6px;background:var(--card);color:var(--text)}
+.go{font:inherit;font-weight:bold;padding:8px 16px;border:2px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:6px;cursor:pointer;width:auto}
+label{display:block;margin:10px 0 3px;font-weight:bold;font-size:.92rem}
+.bar{height:16px;border:2px solid var(--ink);border-radius:8px;overflow:hidden;margin:10px 0 4px}.bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .5s}
+.res{margin:8px 0 0}.res b{font-size:1.05rem}
+.note{color:var(--muted);font-size:.82rem;margin-top:10px}
+.opt{display:block;width:100%;text-align:left;font:inherit;margin:6px 0;padding:9px 12px;border:2px solid var(--line);background:var(--card);color:var(--text);border-radius:6px;cursor:pointer}
+.opt.good{border-color:var(--ok)}.opt.bad{border-color:var(--warn)}
+.ex{border-left:4px solid var(--ok);padding:6px 10px;margin:10px 0;background:color-mix(in srgb,var(--ok) 8%,var(--card))}
+.ex.no{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,var(--card))}
+details{border-top:1px solid var(--line);padding:6px 0}summary{cursor:pointer;font-weight:bold;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Оқушы көмекшісі 3.0</h1>
+<p class="sub">Чат-бот, пән мен сынып бойынша тест, ФБ/БЖБ/ТЖБ бойынша баға есептеу.</p>
+<nav role="tablist">
+<button role="tab" aria-selected="true" data-t="chat">Чат-бот</button>
+<button role="tab" aria-selected="false" data-t="quiz">Тест</button>
+<button role="tab" aria-selected="false" data-t="calc">Баға есептеу</button>
+<button role="tab" aria-selected="false" data-t="about">Жоба</button>
+</nav>
+
+<section id="chat" class="on">
+<h2>Сұрақ қойыңыз</h2>
+<div id="log" aria-live="polite"></div>
+<div class="chips" id="chips"></div>
+<div class="row"><input id="q" placeholder="Мысалы: Пифагор теоремасы" aria-label="Сұрақ"><button class="go" id="send">Жіберу</button></div>
+</section>
+
+<section id="quiz">
+<h2>Тест</h2>
+<div class="g2"><div><label for="gr">Сынып</label><select id="gr"><option>7</option><option>8</option><option>9</option><option>10</option><option selected>11</option><option value="web">Интернеттен (ағылшынша)</option></select></div>
+<div><label for="sb">Пән</label><select id="sb"><option value="inf">Информатика</option><option value="mat">Математика</option><option value="fiz">Физика</option></select></div></div>
+<label for="cn">Сұрақ саны</label><select id="cn"><option>5</option><option selected>10</option><option>20</option></select>
+<p><button class="go" id="start">Тестті бастау</button> <a class="v" id="vl" target="_blank" rel="noopener">▶ Осы пәнге видеосабақтар</a></p>
+<div id="qbox"></div>
+<details><summary>Сұрақтар базасын интернеттен жаңарту</summary>
+<p class="note">questions.json файлын интернетке (GitHub, Google Drive, сайт) жүктеп, тікелей сілтемесін қойыңыз. Бет ашылған сайын база өздігінен жаңарады.</p>
+<div class="row"><input type="url" id="uu" placeholder="https://.../questions.json" aria-label="Сұрақтар файлының сілтемесі"><button class="go" id="ub">Жаңарту</button></div>
+<p class="note" id="us"></p></details>
+</section>
+
+<section id="calc">
+<h2>Тоқсандық бағаны есептеу</h2>
+<label for="md">Есептеу тәсілі</label>
+<select id="md"><option value="n">Ресми: БЖБ 50% + ТЖБ 50% (ФБ есепке алынбайды)</option><option value="f">ФБ қосылған: ФБ 25% + БЖБ 25% + ТЖБ 50%</option></select>
+<label for="fi">ФБ бағалары (0–10): жаңасын қоса беріңіз</label>
+<div class="row"><input type="number" id="fi" min="0" max="10" step="0.5" placeholder="8"><button class="go" id="fa">+ ФБ</button></div>
+<div class="chips" id="fl"></div>
+<label>БЖБ: ұпай / максимум (қанша болса да қосыңыз)</label>
+<div id="bl"></div><p><button class="go" id="ba">+ БЖБ қосу</button></p>
+<label>ТЖБ: ұпай / максимум</label>
+<div class="g2"><input type="number" id="ts" placeholder="ТЖБ ұпай"><input type="number" id="tm" placeholder="макс"></div>
+<p class="note" style="margin-top:4px">ТЖБ ұпайын бос қалдырсаңыз, қажетті ұпайды есептейміз.</p>
+<p><button class="go" id="cb">Есептеу</button></p>
+<div class="bar" role="progressbar" aria-label="4 немесе 5 алу ықтималдығы"><i id="pb"></i></div>
+<div class="res" id="cr"></div>
+<p class="note">Баға шкаласы: 85–100% = 5, 65–84% = 4, 40–64% = 3, 0–39% = 2. Ресми тәсілде БЖБ-ның барлық ұпайы бір пайызға жиналады (қосынды ұпай / қосынды максимум), содан кейін тоқсандық пайыз = 0,5·БЖБ% + 0,5·ТЖБ%. Екінші тәсіл (ФБ 25%) шектеу шаралары мен қашықтан оқыту кезіндегі ереже бойынша алынған. Мектебіңіз қайсысын қолданатынын мұғалімнен нақтылаңыз.</p>
+</section>
+
+<section id="about">
+<h2>Жоба паспорты</h2>
+<details open><summary>Өзектілігі</summary>Оқушыға сабақтан тыс жедел көмек және үлгерімді алдын ала көру құралы қажет.</details>
+<details><summary>Мақсаты мен міндеттері</summary>Мақсат: оқуға көмектесетін ЖИ прототипі. Міндет: сұрақ базасын жинау, тест пен болжам моделін кодтау, сынау.</details>
+<details><summary>Әдістері</summary>Талдау, салыстыру, бағдарламалау, машиналық оқыту, эмпирикалық сынақ.</details>
+<details><summary>Ерекшелігі</summary>Қазақстан бағалау жүйесіне (ФБ, БЖБ, ТЖБ) бейімделген, суретті, видео мен шешілу жолы бар көмекші.</details>
+<details><summary>Практикалық маңызы мен нәтиже</summary>Оқушы мен мұғалімге арналған бір файлдық қосымша: чат-бот, тест, баға есептегіш.</details>
+<details><summary>Көрнекілік және баяндама</summary>Қосымшаны тікелей көрсету. Жоспар: кіріспе 1 мин, жасалуы 3 мин, қорытынды 1 мин.</details>
+</section>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const tabs=document.querySelectorAll('nav button');
+tabs.forEach(b=>b.onclick=()=>{tabs.forEach(x=>x.setAttribute('aria-selected',x===b));document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===b.dataset.t))});
+const SN={inf:'Информатика',mat:'Математика',fiz:'Физика'};
+const vid=t=>'https://www.youtube.com/results?search_query='+encodeURIComponent(t+' видеосабақ қазақша');
+
+// ---------- Суреттер ----------
+const A='fill="none" stroke="currentColor" stroke-width="2.5"';
+let net='';[20,50,80].forEach(y=>[12,37,62,87].forEach(h=>net+=`<path d="M25 ${y}L80 ${h}" stroke="currentColor" opacity=".3"/>`));[12,37,62,87].forEach(h=>net+=`<path d="M80 ${h}L135 50" stroke="currentColor" opacity=".3"/>`);
+[20,50,80].forEach(y=>net+=`<circle cx="25" cy="${y}" r="7" fill="currentColor"/>`);[12,37,62,87].forEach(y=>net+=`<circle cx="80" cy="${y}" r="7" fill="var(--card)" stroke="currentColor" stroke-width="2"/>`);net+='<circle cx="135" cy="50" r="9" fill="currentColor"/>';
+const S={
+tri:`<svg viewBox="0 0 160 100"><path d="M25 85H115V20Z" ${A}/><path d="M105 85v-10h10" fill="none" stroke="currentColor"/><g fill="currentColor" font-size="13"><text x="65" y="98">a</text><text x="120" y="55">b</text><text x="55" y="48">c</text><text x="8" y="14">c² = a² + b²</text></g></svg>`,
+par:`<svg viewBox="0 0 160 100"><path d="M10 50H150M80 8V92" stroke="currentColor" opacity=".4"/><path d="M35 10Q80 140 125 10" ${A}/><g fill="currentColor" font-size="11"><text x="86" y="20">y</text><text x="140" y="46">x</text><text x="88" y="90">D&gt;0: 2 түбір</text></g></svg>`,
+new:`<svg viewBox="0 0 160 100"><rect x="55" y="40" width="50" height="35" ${A}/><path d="M105 57H145M137 51l8 6-8 6" ${A}/><path d="M20 82H140" stroke="currentColor" opacity=".4"/><g fill="currentColor" font-size="13"><text x="74" y="62">m</text><text x="118" y="48">F</text><text x="20" y="25">F = m · a</text></g></svg>`,
+cir:`<svg viewBox="0 0 160 100"><path d="M30 20H130V80H30Z" ${A}/><rect x="62" y="12" width="36" height="16" fill="var(--card)" stroke="currentColor" stroke-width="2.5"/><path d="M22 44H38M27 54H33" stroke="currentColor" stroke-width="3"/><g fill="currentColor" font-size="13"><text x="74" y="44">R</text><text x="42" y="54">U</text><text x="58" y="68">I = U / R</text></g></svg>`,
+bin:`<svg viewBox="0 0 160 100"><g ${A.replace('2.5','2')}><rect x="15" y="25" width="30" height="30"/><rect x="48" y="25" width="30" height="30"/><rect x="81" y="25" width="30" height="30"/><rect x="114" y="25" width="30" height="30"/></g><g fill="currentColor" font-size="18" text-anchor="middle"><text x="30" y="47">1</text><text x="63" y="47">0</text><text x="96" y="47">1</text><text x="129" y="47">1</text><text x="30" y="72" font-size="12">8</text><text x="63" y="72" font-size="12">4</text><text x="96" y="72" font-size="12">2</text><text x="129" y="72" font-size="12">1</text><text x="80" y="92" font-size="13">1011 = 8+2+1 = 11</text></g></svg>`,
+net:`<svg viewBox="0 0 160 100">${net}</svg>`
+};
+
+// ---------- Чат-бот ----------
+const KB=[
+{k:['сәлем','салем','привет'],a:'Сәлем! 👋 Информатика, математика және физика бойынша сұрақ қойыңыз.'},
+{k:['айнымалы'],a:'💾 Айнымалы деректі сақтайтын атаулы жад ұяшығы. Python-да: x = 10. Түрін алдын ала жазу керек емес.',v:'Python айнымалы'},
+{k:['цикл','for','while'],a:'🔁 Цикл әрекетті қайталайды. for i in range(5): print(i) нөлден төртке дейін шығарады. Шарт орындалғанша қайталау үшін while қолданылады.',v:'Python цикл for while'},
+{k:['алгоритм'],a:'📋 Алгоритм есепті шешудің нақты, ретімен орындалатын қадамдар тізбегі. Қасиеттері: дәлдік, түсініктілік, ақырлылық, нәтижелілік.',v:'алгоритм дегеніміз не'},
+{k:['тармақталу','шарт','if'],a:'🔀 Шартты оператор: if x > 0: print("оң") else: print("оң емес"). Шарт ақиқат болса бірінші блок орындалады.',v:'Python if else'},
+{k:['тізім','массив','list'],a:'📚 Тізім бірнеше мәнді сақтайды: a = [5, 7, 9]. Индекс 0-ден басталады: a[0] = 5. Қосу: a.append(11).',v:'Python тізім list'},
+{k:['функция','def'],a:'🧩 Функция қайталанатын кодты атауға жинайды: def kvadrat(x): return x*x. Шақыру: kvadrat(4) = 16.',v:'Python функция def'},
+{k:['html','сайт','тег'],a:'🌐 HTML веб-бет құрылымын тегтермен сипаттайды. Мысалы, <a href="..."> гиперсілтеме жасайды, <p> абзац, <img> сурет.',v:'HTML негіздері'},
+{k:['жасанды интеллект','нейрожел','машиналық','нейрон'],a:'🧠 Жасанды интеллект компьютерге адамның ойлауына ұқсас тапсырмаларды орындатады. Нейрожелі кіріс, жасырын және шығыс қабаттардан тұрады, ережені деректерден өзі үйренеді.',s:'net',v:'нейрондық желі қалай жұмыс істейді'},
+{k:['екілік','двоичный','binary'],a:'💡 Екілік жүйе тек 0 мен 1 қолданады. Әр разряд екінің дәрежесіне сәйкес: 8, 4, 2, 1. Мысалы, 1011 = 8 + 2 + 1 = 11.',s:'bin',v:'екілік санау жүйесі'},
+{k:['қауіпсіз','құпиясөз','фишинг','пароль'],a:'🔒 Күшті құпиясөз ұзын болады және әріп, сан, символ қосады. Бейтаныс сілтемелерге өтпеңіз, кодты ешкімге айтпаңыз, екі сатылы тексеруді қосыңыз.',v:'кибергигиена фишинг'},
+{k:['дискриминант','квадрат теңдеу'],a:'📐 ax² + bx + c = 0 үшін D = b² − 4ac. D > 0: екі түбір, D = 0: бір түбір, D < 0: нақты түбір жоқ. Түбір: x = (−b ± √D) / 2a.',s:'par',v:'квадрат теңдеу дискриминант'},
+{k:['пифагор'],a:'📐 Тікбұрышты үшбұрышта гипотенузаның квадраты катеттер квадраттарының қосындысына тең: c² = a² + b². Мысалы, 3 және 4 катет болса, c = 5.',s:'tri',v:'Пифагор теоремасы'},
+{k:['пайыз','процент'],a:'💯 Санның p% = сан · p / 100. Мысалы, 200-дің 15% = 200 · 15 / 100 = 30.',v:'пайызға есептер'},
+{k:['прогрессия'],a:'🔢 Арифметикалық прогрессия: aₙ = a₁ + (n − 1)d. Геометриялық: bₙ = b₁ · qⁿ⁻¹. Мысалы, a₁ = 2, d = 3 болса, a₅ = 14.',v:'арифметикалық прогрессия'},
+{k:['логарифм','log'],a:'🔢 log₂8 = 3, себебі 2³ = 8. Логарифм дәреже көрсеткішін табады: logₐb = c ⇔ aᶜ = b.',v:'логарифм'},
+{k:['туынды'],a:'📈 Туынды функцияның өзгеру жылдамдығы. (xⁿ)′ = n·xⁿ⁻¹, сондықтан (x²)′ = 2x, (x³)′ = 3x².',v:'туынды табу'},
+{k:['синус','косинус','тригонометр','sin','cos'],a:'📐 Тікбұрышты үшбұрышта sin α = қарсы катет / гипотенуза, cos α = іргелес катет / гипотенуза. sin30° = 1/2, cos60° = 1/2.',s:'tri',v:'тригонометрия'},
+{k:['ньютон','күш'],a:'🚀 Ньютонның екінші заңы: F = m·a. Күш дененің массасы мен үдеуінің көбейтіндісіне тең. Мысалы, m = 2 кг, a = 3 м/с² болса, F = 6 Н.',s:'new',v:'Ньютон заңдары'},
+{k:['жылдамдық'],a:'🏃 Бірқалыпты қозғалыс: v = S / t, S = v·t, t = S / v. Мысалы, 20 м/с жылдамдықпен 5 с жүрсе, S = 100 м.',v:'бірқалыпты қозғалыс жылдамдық'},
+{k:['ом','тоқ','кернеу','кедергі'],a:'⚡ Ом заңы: I = U / R. Тоқ күші кернеуге тура, кедергіге кері пропорционал. U = 12 В, R = 4 Ом болса, I = 3 А.',s:'cir',v:'Ом заңы'},
+{k:['тығыздық'],a:'⚖️ Тығыздық ρ = m / V, өлшемі кг/м³. Масса m = ρ·V.',v:'тығыздық физика'},
+{k:['энергия','кинетикалық'],a:'🔋 Кинетикалық энергия Ek = mv²/2, потенциалдық Ep = mgh. Мысалы, m = 2 кг, v = 3 м/с болса, Ek = 9 Дж.',v:'кинетикалық энергия'},
+{k:['архимед'],a:'🚢 Архимед күші Fₐ = ρ·g·V. Сұйыққа батырылған денеге ығысқан сұйық салмағындай көтеру күші әсер етеді.',v:'Архимед күші'},
+{k:['бағалау','бжб','тжб','фб'],a:'📝 ФБ формативті бағалау (үнемі кері байланыс). БЖБ бөлім бойынша жиынтық, ТЖБ тоқсан бойынша жиынтық бағалау. «Баға есептеу» бөлімінде ұпайларыңызды енгізіп, тоқсандық бағаны көріңіз.'}
+];
+const log=$('log'),q=$('q');
+function add(t,c,e){const d=document.createElement('div');d.className='m '+c;d.textContent=t;
+ if(e&&e.s){const i=document.createElement('div');i.className='ill';i.innerHTML=S[e.s];d.appendChild(i)}
+ if(e&&e.v){const a=document.createElement('a');a.className='v';a.href=vid(e.v);a.target='_blank';a.rel='noopener';a.textContent='▶ Видео анықтама';d.appendChild(a)}
+ if(e&&e.u){const a=document.createElement('a');a.className='v';a.href=e.u;a.target='_blank';a.rel='noopener';a.textContent=e.u.includes('google')?'\n🔎 Google-да іздеу':'\n📖 Толығырақ: Википедия';d.appendChild(a)}
+ log.appendChild(d);log.scrollTop=log.scrollHeight}
+const kw=(s,w)=>w.length<=3?new RegExp('(^|[^\\p{L}])'+w+'([^\\p{L}]|$)','u').test(s):s.includes(w);
+const clean=t=>t.replace(/(деген не|дегеніміз не|деген|что такое|кто такой|\?)/gi,'').trim();
+const cf=v=>v===''||v==='+'?1:v==='-'?-1:parseFloat(v);
+function solve(t){
+ const s=t.replace(/\s+/g,'').replace(/²/g,'^2').replace(/,/g,'.');
+ const m=s.match(/^([+-]?\d*\.?\d*)x\^2([+-]\d*\.?\d*)x([+-]\d+\.?\d*)?=0$/);
+ if(m){const a=cf(m[1]),b=cf(m[2]),c=m[3]?parseFloat(m[3]):0,D=b*b-4*a*c;if(a===0)return null;
+  let r=`📐 ${a}x² + ${b}x + ${c} = 0\nD = b² − 4ac = ${b*b} − ${4*a*c} = ${D}\n`;
+  if(D<0)return r+'D < 0, нақты түбір жоқ.';
+  const x1=(-b+Math.sqrt(D))/(2*a),x2=(-b-Math.sqrt(D))/(2*a);
+  return r+(D===0?`Бір түбір: x = ${+x1.toFixed(6)}`:`x₁ = ${+x1.toFixed(6)}, x₂ = ${+x2.toFixed(6)}`)}
+ if(/^[\d+\-*/().^%\s,]+$/.test(t)&&/\d/.test(t)&&/[+\-*/^%]/.test(t)){try{const v=Function('"use strict";return ('+t.replace(/,/g,'.').replace(/\^/g,'**')+')')();if(isFinite(v))return `🧮 ${t} = ${+v.toFixed(10)}`}catch(e){}}
+ return null}
+async function web(t){
+ for(const l of ['kk','ru']){try{
+  const j=await(await fetch(`https://${l}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(t)}&srlimit=1&format=json&origin=*`)).json();
+  const h=j.query.search[0];if(!h)continue;
+  const d=await(await fetch(`https://${l}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(h.title)}`)).json();
+  if(d.extract)return{ti:d.title,t:d.extract,u:d.content_urls.desktop.page}}catch(e){}}
+ return null}
+async function ask(t){t=t.trim();if(!t)return;add(t,'me');q.value='';const s=t.toLowerCase()+' ';
+ const e=KB.find(x=>x.k.some(w=>kw(s,w)));
+ if(e){setTimeout(()=>add(e.a,'bot',e),250);return}
+ const m=solve(t);if(m){add(m,'bot');return}
+ const c=clean(t);if(!c){add('Сұрағыңызды толығырақ жазыңыз.','bot');return}
+ add('🔎 Интернеттен іздеп жатырмын…','bot');const wait=log.lastChild;
+ const r=await web(c);wait.remove();
+ if(r)add('🌐 '+r.ti+'\n'+r.t+'\n(Дереккөз: Википедия)','bot',{u:r.u,v:r.ti});
+ else add('Жауап табылмады. Интернет байланысын тексеріп, сұрақты басқаша қойып көріңіз.','bot',{u:'https://www.google.com/search?q='+encodeURIComponent(t)})}
+$('send').onclick=()=>ask(q.value);q.onkeydown=e=>{if(e.key==='Enter')ask(q.value)};
+['Пифагор теоремасы','Дискриминант','Ньютон заңы','Ом заңы','Екілік жүйе','Нейрожелі','Цикл','Логарифм','ТЖБ дегеніміз не?'].forEach(t=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>ask(t);$('chips').appendChild(b)});
+add('Сәлем! 👋 Мен информатика, математика және физика бойынша көмектесемін. Сұрақ жазыңыз немесе төмендегі түймені басыңыз.','bot');
+
+// ---------- Тест: [сынып, пән, сұрақ, жауаптар, дұрысы, түсініктеме, тақырып] ----------
+const QS=[
+[7,'mat','2x + 6 = 14 теңдеуінің түбірі қанша?',['3','4','5'],1,'1-қадам: белгісізді бір жаққа жинаймыз: 2x = 14 − 6 = 8. 2-қадам: екіге бөлеміз: x = 8 : 2 = 4. Тексеру: 2·4 + 6 = 14.','сызықтық теңдеу'],
+[7,'mat','(a + b)² қалай жіктеледі?',['a² + b²','a² + 2ab + b²','a² − 2ab + b²'],1,'(a+b)² = (a+b)(a+b) = a² + ab + ab + b² = a² + 2ab + b². Ортадағы 2ab мүшесін ұмытпаңыз.','қысқаша көбейту формулалары'],
+[7,'fiz','Жылдамдық 20 м/с, қозғалыс уақыты 5 с. Жүрген жол қанша?',['4 м','100 м','25 м'],1,'Формула: S = v·t. Қою: S = 20 м/с · 5 с = 100 м. Өлшемдер қысқарады: м/с · с = м.','бірқалыпты қозғалыс'],
+[7,'fiz','Тығыздықтың формуласы қайсы?',['ρ = m / V','ρ = V / m','ρ = m · V'],0,'Тығыздық заттың бірлік көлеміндегі массасы. Сондықтан массаны көлемге бөлеміз: ρ = m / V, өлшемі кг/м³.','тығыздық'],
+[7,'inf','1 байтта неше бит бар?',['4','8','16'],1,'Байт ақпараттың өлшем бірлігі: 1 байт = 8 бит. 1 Кбайт = 1024 байт.','ақпарат өлшем бірліктері'],
+[7,'inf','Екілік 101 санының ондық мәні қанша?',['3','5','7'],1,'Разрядтар оңнан солға: 1, 2, 4. 1·4 + 0·2 + 1·1 = 5.','екілік санау жүйесі'],
+[8,'mat','x² − 9 = 0 теңдеуінің түбірлері қандай?',['±3','3','9'],0,'x² = 9 болғандықтан, x = ±√9 = ±3. Екі түбір бар: 3 және −3, себебі (−3)² = 9.','квадрат теңдеу'],
+[8,'mat','Катеттері 3 және 4 болатын тікбұрышты үшбұрыштың гипотенузасы?',['5','6','7'],0,'Пифагор теоремасы: c² = a² + b² = 9 + 16 = 25. Сонда c = √25 = 5.','Пифагор теоремасы'],
+[8,'fiz','m = 2 кг, a = 3 м/с². Күш F қанша?',['5 Н','6 Н','1,5 Н'],1,'Ньютонның екінші заңы: F = m·a = 2 · 3 = 6 Н.','Ньютон заңдары'],
+[8,'fiz','U = 12 В, R = 4 Ом. Тоқ күші I қанша?',['48 А','3 А','8 А'],1,'Ом заңы: I = U / R = 12 / 4 = 3 А.','Ом заңы'],
+[8,'inf','Python-да print(2**3) нені шығарады?',['6','8','9'],1,'** операторы дәрежеге шығарады: 2**3 = 2·2·2 = 8. Көбейту (2*3 = 6) басқа оператор.','Python операторлар'],
+[8,'inf','Python-да len("сәлем") нәтижесі қандай?',['4','5','6'],1,'len() жолдағы таңбалар санын санайды: с, ә, л, е, м, яғни 5.','Python жолдар'],
+[9,'mat','a₁ = 2, d = 3 арифметикалық прогрессияда a₅ қанша?',['14','17','11'],0,'Формула: aₙ = a₁ + (n−1)d. a₅ = 2 + 4·3 = 2 + 12 = 14.','арифметикалық прогрессия'],
+[9,'mat','x² − 5x + 6 = 0 теңдеуінің түбірлері?',['2 және 3','1 және 6','−2 және −3'],0,'D = b² − 4ac = 25 − 24 = 1. x = (5 ± 1) / 2, яғни x₁ = 3, x₂ = 2. Тексеру: 2 + 3 = 5, 2·3 = 6 (Виет).','квадрат теңдеу дискриминант'],
+[9,'fiz','Еркін түсу: g ≈ 10 м/с², t = 3 с. Жылдамдық v = g·t қанша?',['13 м/с','30 м/с','3,3 м/с'],1,'Бастапқы жылдамдық нөл болғанда v = g·t = 10 · 3 = 30 м/с.','еркін түсу'],
+[9,'fiz','m = 2 кг, v = 3 м/с. Кинетикалық энергия Ek = mv²/2?',['6 Дж','9 Дж','18 Дж'],1,'v² = 9, одан mv² = 2·9 = 18, екіге бөлеміз: 18 / 2 = 9 Дж.','кинетикалық энергия'],
+[9,'inf','for i in range(3): print(i) нені шығарады?',['1 2 3','0 1 2','0 1 2 3'],1,'range(3) нөлден бастап 3-ке дейін, 3-ті қоспай санайды: 0, 1, 2.','Python цикл for'],
+[9,'inf','Екілік 1111 санының ондық мәні қанша?',['15','16','14'],0,'8 + 4 + 2 + 1 = 15. Төрт бірлік бар, ең үлкен төртразрядты екілік сан.','екілік санау жүйесі'],
+[10,'mat','log₂8 қанша?',['2','3','4'],1,'Сұрақ: 2-ні қандай дәрежеге шығарсақ 8 болады? 2³ = 8, сондықтан log₂8 = 3.','логарифм'],
+[10,'mat','sin 30° қанша?',['1/2','√3/2','1'],0,'Кестелік мән: sin30° = 1/2. Есте сақтау: 30°, 45°, 60° үшін sin мәндері 1/2, √2/2, √3/2.','тригонометрия кестелік мәндер'],
+[10,'fiz','T тұрақты, газдың көлемі 2 есе азайса, қысым қалай өзгереді?',['2 есе артады','2 есе азаяды','өзгермейді'],0,'Бойль–Мариотт заңы: pV = const. V екі есе кемісе, көбейтінді тұрақты болу үшін p екі есе артады.','Бойль Мариотт заңы'],
+[10,'fiz','I = 2 А, U = 10 В. Қуат P = U·I қанша?',['5 Вт','20 Вт','12 Вт'],1,'P = U·I = 10 · 2 = 20 Вт.','электр тогының қуаты'],
+[10,'inf','Python тізімінің бірінші элементінің индексі қанша?',['0','1','−1'],0,'Python-да индекстеу нөлден басталады: a[0] бірінші, a[1] екінші. a[−1] соңғы элемент.','Python тізім'],
+[10,'inf','SQL-де деректерді таңдау командасы қайсы?',['SELECT','INSERT','DELETE'],0,'SELECT кестеден деректерді оқиды. INSERT жаңа жол қосады, DELETE жолды жояды.','SQL SELECT'],
+[11,'mat','(x²)′ туындысы қандай?',['x','2x','x²'],1,'Ережесі: (xⁿ)′ = n·xⁿ⁻¹. n = 2 болса, 2·x¹ = 2x.','туынды табу'],
+[11,'mat','∫ 2x dx қанша?',['x² + C','2x² + C','x + C'],0,'Алғашқы функцияны табамыз: x²-тың туындысы 2x. Сондықтан ∫2x dx = x² + C.','анықталмаған интеграл'],
+[11,'fiz','Фотон энергиясы E = hν. Жиілік 2 есе артса, E қалай өзгереді?',['2 есе артады','2 есе азаяды','өзгермейді'],0,'h тұрақты болғандықтан, E жиілікке тура пропорционал. ν екі есе артса, E де екі есе артады.','фотон энергиясы'],
+[11,'fiz','Жартылай ыдырау периоды T. 2T өткенде бастапқы ядролардың қандай бөлігі қалады?',['1/2','1/4','1/8'],1,'Әр период сайын ядро саны екі есе азаяды. T өткенде 1/2, 2T өткенде 1/2 · 1/2 = 1/4.','радиоактивті ыдырау'],
+[11,'inf','HTML-де гиперсілтеме жасайтын тег қайсы?',['<a>','<p>','<img>'],0,'<a href="сілтеме"> гиперсілтеме жасайды. <p> абзац, <img> сурет үшін.','HTML гиперсілтеме'],
+[11,'inf','Қайсы құпиясөз ең қауіпсіз?',['12345','qwerty','Xk!9rT#2mP'],2,'Күшті құпиясөз ұзын, әріп, сан және символдардан тұрады, сөздікте жоқ. 12345 мен qwerty ең бірінші болып сынап көрілетін құпиясөздер.','кибергигиена құпиясөз']
+];
+let cur=[],qi=0,sc=0;const qb=$('qbox');
+const vl=()=>{const g=$('gr').value;$('vl').href=vid(SN[$('sb').value]+(g==='web'?'':' '+g+' сынып'))};
+$('gr').onchange=$('sb').onchange=vl;vl();
+//GEN-START
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+function shuf(a){for(let i=a.length-1;i>0;i--){const j=ri(0,i);[a[i],a[j]]=[a[j],a[i]]}return a}
+function mk(c,w,u=''){const s=[c];w.forEach(x=>{if(!s.includes(x))s.push(x)});let k=1;while(s.length<3){if(!s.includes(c+k))s.push(c+k);k++}const o=shuf(s.slice(0,3));return[o.map(x=>x+u),o.indexOf(c)]}
+const GEN={
+mat:[
+[7,()=>{const a=ri(2,9),x=ri(2,12),b=ri(1,20),c=a*x+b,[o,i]=mk(x,[x+1,x-1,c-b]);return[`${a}x + ${b} = ${c} теңдеуін шешіңіз. x = ?`,o,i,`${a}x = ${c} − ${b} = ${c-b}. x = ${c-b} : ${a} = ${x}. Тексеру: ${a}·${x} + ${b} = ${c}.`,'сызықтық теңдеу']}],
+[7,()=>{const p=[10,20,25,50][ri(0,3)],n=ri(2,15)*20,r=n*p/100,[o,i]=mk(r,[r*2,n-r,r+p]);return[`${n} санының ${p}% қанша?`,o,i,`${p}% = ${p}/100. ${n} · ${p} / 100 = ${r}.`,'пайызға есептер']}],
+[8,()=>{const t=[[3,4,5],[5,12,13],[8,15,17],[6,8,10],[9,12,15]][ri(0,4)],[o,i]=mk(t[2],[t[2]+1,t[0]+t[1],t[2]-1]);return[`Катеттері ${t[0]} және ${t[1]} болатын тікбұрышты үшбұрыштың гипотенузасы қанша?`,o,i,`c² = ${t[0]}² + ${t[1]}² = ${t[0]**2} + ${t[1]**2} = ${t[2]**2}. c = √${t[2]**2} = ${t[2]}.`,'Пифагор теоремасы']}],
+[9,()=>{const r1=ri(1,6),r2=ri(r1+1,9),b=r1+r2,c=r1*r2,[o,i]=mk(r2,[r1,r2+1,-r2]);return[`x² − ${b}x + ${c} = 0 теңдеуінің үлкен түбірі қанша?`,o,i,`D = b² − 4ac = ${b*b} − ${4*c} = ${b*b-4*c}. √D = ${r2-r1}. x = (${b} ± ${r2-r1}) / 2, яғни x₁ = ${r2}, x₂ = ${r1}. Үлкені: ${r2}.`,'квадрат теңдеу дискриминант']}],
+[9,()=>{const a=ri(1,9),d=ri(2,6),n=ri(5,12),r=a+(n-1)*d,[o,i]=mk(r,[r+d,r-d,a+n*d]);return[`Арифметикалық прогрессияда a₁ = ${a}, d = ${d}. a${n} қанша?`,o,i,`aₙ = a₁ + (n − 1)d = ${a} + ${n-1}·${d} = ${r}.`,'арифметикалық прогрессия']}],
+[10,()=>{const b=[2,3,5][ri(0,2)],k=ri(2,5),v=b**k,[o,i]=mk(k,[k+1,k-1,b]);return[`log${b === 2 ? '₂' : b === 3 ? '₃' : '₅'} ${v} қанша?`,o,i,`${b}-ті қандай дәрежеге шығарсақ ${v} болады? ${b}^${k} = ${v}, сондықтан логарифм ${k}.`,'логарифм']}],
+[11,()=>{const k=ri(2,9),n=ri(2,5),[o,i]=mk(k*n,[k*n+n,k+n,k*(n-1)]);return[`f(x) = ${k}x^${n} үшін f′(1) қанша?`,o,i,`f′(x) = ${k}·${n}·x^${n-1}. x = 1 болғанда f′(1) = ${k}·${n} = ${k*n}.`,'туынды табу']}]
+],
+fiz:[
+[7,()=>{const v=ri(2,30),t=ri(2,12),S=v*t,[o,i]=mk(S,[v+t,S+v,S-t],' м');return[`Дене ${v} м/с жылдамдықпен ${t} с қозғалды. Жүрген жолы қанша?`,o,i,`S = v·t = ${v} · ${t} = ${S} м.`,'бірқалыпты қозғалыс']}],
+[8,()=>{const m=ri(2,9),a=ri(2,9),F=m*a,[o,i]=mk(F,[m+a,F+m,F-a],' Н');return[`Массасы ${m} кг дене ${a} м/с² үдеумен қозғалады. Күш F қанша?`,o,i,`Ньютонның екінші заңы: F = m·a = ${m} · ${a} = ${F} Н.`,'Ньютон заңдары']}],
+[8,()=>{const R=ri(2,10),I=ri(1,6),U=R*I,[o,i]=mk(I,[I+1,I+2,U],' А');return[`Тізбектегі кернеу ${U} В, кедергі ${R} Ом. Тоқ күші қанша?`,o,i,`Ом заңы: I = U / R = ${U} / ${R} = ${I} А.`,'Ом заңы']}],
+[9,()=>{const t=ri(2,9),v=10*t,[o,i]=mk(v,[v+10,5*t,v-10],' м/с');return[`Дене еркін түсіп (g = 10 м/с²), ${t} секундтан кейін қандай жылдамдық алады?`,o,i,`v = g·t = 10 · ${t} = ${v} м/с.`,'еркін түсу']}],
+[9,()=>{const m=ri(1,5)*2,v=ri(2,8),E=m*v*v/2,[o,i]=mk(E,[m*v*v,m*v,E+m],' Дж');return[`m = ${m} кг, v = ${v} м/с. Кинетикалық энергия қанша?`,o,i,`Ek = mv²/2 = ${m}·${v}² / 2 = ${m*v*v} / 2 = ${E} Дж.`,'кинетикалық энергия']}],
+[10,()=>{const U=ri(2,24),I=ri(2,8),P=U*I,[o,i]=mk(P,[U+I,P+U,P-I],' Вт');return[`U = ${U} В, I = ${I} А. Қуат P қанша?`,o,i,`P = U·I = ${U} · ${I} = ${P} Вт.`,'электр тогының қуаты']}]
+],
+inf:[
+[7,()=>{const n=ri(2,64),[o,i]=mk(n*1024,[n*1000,n*8,n*1024+1024]);return[`${n} Кбайт неше байт?`,o,i,`1 Кбайт = 1024 байт. ${n} · 1024 = ${n*1024} байт.`,'ақпарат өлшем бірліктері']}],
+[7,()=>{const n=ri(5,15),b=n.toString(2),[o,i]=mk(n,[n+1,n-1,n+2]);return[`Екілік ${b} санының ондық мәні қанша?`,o,i,`Разрядтар оңнан солға: 1, 2, 4, 8. `+b.split('').reverse().map((d,k)=>`${d}·${2**k}`).reverse().join(' + ')+` = ${n}.`,'екілік санау жүйесі']}],
+[8,()=>{const n=ri(6,31),[o,i]=mk(n.toString(2),[(n+1).toString(2),(n-1).toString(2),(n+2).toString(2)]);let e='',x=n;while(x>0){e+=`${x} : 2 = ${x>>1}, қалдық ${x%2}. `;x>>=1}return[`Ондық ${n} санын екілік жүйеге аударыңыз.`,o,i,e+`Қалдықтарды соңынан бастап оқимыз: ${n.toString(2)}.`,'ондықтан екілікке аудару']}],
+[8,()=>{const a=ri(10,50),b=ri(3,9),[o,i]=mk(a%b,[Math.floor(a/b),a%b+1,b]);return[`Python-да print(${a} % ${b}) нені шығарады?`,o,i,`% операторы бөлгендегі қалдықты береді. ${a} = ${b}·${Math.floor(a/b)} + ${a%b}, қалдық ${a%b}.`,'Python операторлар']}],
+[9,()=>{const a=ri(0,5),b=a+ri(3,9),[o,i]=mk(b-a,[b-a+1,b-a-1,b]);return[`for i in range(${a}, ${b}): print(i) қанша сан шығарады?`,o,i,`range(${a}, ${b}) ${a}-ден бастап ${b}-ны қоспай санайды. Сандар саны: ${b} − ${a} = ${b-a}.`,'Python цикл for']}]
+]};
+//GEN-END
+let REM=[];
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+const DEF='https://ejorabek-rgb.github.io/-/questions.json';
+async function loadRemote(u){const st=$('us');st.textContent='Жүктелуде…';try{const r=await fetch(u,{cache:'no-store'});if(!r.ok){st.textContent='Файл табылмады (қате '+r.status+'). questions.json файлын осы мекенжайға жүктеңіз: '+u;return}const j=await r.json();
+ REM=j.filter(x=>x&&x.q&&Array.isArray(x.o)&&x.o.length>1&&Number.isInteger(x.c)&&x.c>=0&&x.c<x.o.length&&['inf','mat','fiz'].includes(x.s)&&x.g>=7&&x.g<=11).map(x=>[+x.g,x.s,x.q,x.o,+x.c,x.e||'Түсіндірме берілмеген.',x.t||x.q]);
+ st.textContent='Жаңартылды: '+REM.length+' сұрақ қосылды ('+new Date().toLocaleTimeString()+').';store.set('qurl',u)}catch(e){st.textContent='Жүктелмеді. Интернетті, сілтемені және JSON пішімін тексеріңіз.'}}
+$('ub').onclick=()=>{const u=$('uu').value.trim();if(u)loadRemote(u)};
+{const u=store.get('qurl')||DEF;$('uu').value=u;loadRemote(u)}
+function compose(g,sb,n){const out=shuf(QS.concat(REM).filter(x=>x[0]==g&&x[1]==sb)).slice(0,Math.ceil(n/2));const gs=GEN[sb].filter(x=>x[0]<=Math.max(g,7));
+ while(out.length<n){const f=gs[ri(0,gs.length-1)][1]();out.push([g,sb,f[0],f[1],f[2],f[3],f[4]])}return shuf(out)}
+async function webQs(sb,n){const c={inf:18,mat:19,fiz:17}[sb],d=decodeURIComponent;
+ const j=await(await fetch(`https://opentdb.com/api.php?amount=${n}&category=${c}&type=multiple&encode=url3986`)).json();
+ return j.results.map(r=>{const a=d(r.correct_answer),o=shuf(r.incorrect_answers.map(d).concat(a));return[0,sb,d(r.question),o,o.indexOf(a),'Дұрыс жауап: '+a+'. Бұл сұрақ Open Trivia DB базасынан алынған (ағылшынша), шешілу жолы берілмейді.',d(r.category)]})}
+$('start').onclick=async()=>{const g=$('gr').value,sb=$('sb').value,n=+$('cn').value;qi=0;sc=0;
+ if(g==='web'){qb.textContent='Жүктелуде…';try{cur=await webQs(sb,n)}catch(e){qb.innerHTML='<p class="note">Интернеттен жүктелмеді. Байланысты тексеріңіз.</p>';return}}
+ else cur=compose(+g,sb,n);
+ if(!cur.length){qb.innerHTML='<p class="note">Сұрақ табылмады.</p>';return}show()};
+function show(){
+ if(qi>=cur.length){qb.innerHTML=`<div class="ex"><b>Нәтиже: ${sc} / ${cur.length}</b> (${Math.round(sc/cur.length*100)}%)</div>`;return}
+ const [g,s,t,o,c,ex,tp]=cur[qi];qb.innerHTML='';
+ const p=document.createElement('p');p.innerHTML=`<b>${qi+1}/${cur.length}.</b> `;p.append(t);qb.appendChild(p);
+ o.forEach((x,i)=>{const b=document.createElement('button');b.className='opt';b.textContent=x;
+  b.onclick=()=>{qb.querySelectorAll('.opt').forEach((y,j)=>{y.disabled=true;if(j===c)y.classList.add('good')});
+   const ok=i===c;if(ok)sc++;else b.classList.add('bad');
+   const d=document.createElement('div');d.className='ex'+(ok?'':' no');
+   d.append((ok?'✔ Дұрыс! ':'✖ Дұрыс жауап: '+o[c]+'. ')+'\nШешілу жолы: '+ex);d.style.whiteSpace='pre-wrap';
+   const a=document.createElement('a');a.className='v';a.href=vid(SN[s]+' '+(g?g+' сынып ':'')+tp);a.target='_blank';a.rel='noopener';a.textContent='\n▶ Осы тақырыпқа видео: '+tp;d.appendChild(a);
+   const n=document.createElement('button');n.className='go';n.textContent=qi+1<cur.length?'Келесі':'Нәтижені көру';n.onclick=()=>{qi++;show()};
+   qb.append(d,n)};qb.appendChild(b)});
+}
+
+// ---------- Баға есептеу + ML ----------
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const sig=z=>1/(1+Math.exp(-z)),r=rng(2026),X=[],Y=[];
+for(let i=0;i<80;i++){const f=.2+r()*.8,b=.2+r()*.8,t=.2+r()*.8;X.push([f,b,t]);Y.push(.5*b+.5*t+(r()-.5)*.06>=.65?1:0)}
+let w=[0,0,0],bi=0;
+for(let e=0;e<3000;e++){const gw=[0,0,0];let gb=0;X.forEach((x,i)=>{const p=sig(w[0]*x[0]+w[1]*x[1]+w[2]*x[2]+bi)-Y[i];for(let j=0;j<3;j++)gw[j]+=p*x[j];gb+=p});for(let j=0;j<3;j++)w[j]-=3*gw[j]/80;bi-=3*gb/80}
+const num=id=>{const v=parseFloat($(id).value);return isNaN(v)?null:v};
+const M=p=>p>=85?5:p>=65?4:p>=40?3:2,f2=x=>+x.toFixed(2);
+const fbs=[];
+function rf(){const l=$('fl');l.innerHTML='';fbs.forEach((v,i)=>{const b=document.createElement('button');b.textContent=v+' ✕';b.setAttribute('aria-label','ФБ '+v+' өшіру');b.onclick=()=>{fbs.splice(i,1);rf()};l.appendChild(b)});
+ if(fbs.length){const p=document.createElement('span');p.className='note';p.textContent='Орташа: '+f2(fbs.reduce((a,b)=>a+b,0)/fbs.length)+' / 10';l.appendChild(p)}}
+$('fa').onclick=()=>{const v=num('fi');if(v===null||v<0||v>10)return;fbs.push(v);$('fi').value='';rf()};
+$('fi').onkeydown=e=>{if(e.key==='Enter')$('fa').click()};
+function brow(){const d=document.createElement('div');d.className='g2';d.style.marginBottom='6px';
+ d.innerHTML='<input type="number" class="bs" placeholder="БЖБ ұпай"><input type="number" class="bm" placeholder="макс"><button class="go" style="flex:0 0 auto" aria-label="БЖБ өшіру">✕</button>';
+ d.lastChild.onclick=()=>d.remove();$('bl').appendChild(d)}
+$('ba').onclick=brow;brow();brow();
+$('cb').onclick=()=>{
+ const o=$('cr'),md=$('md').value;let bs=0,bm=0,bad=false;
+ document.querySelectorAll('#bl .g2').forEach(r=>{const s=parseFloat(r.children[0].value),m=parseFloat(r.children[1].value);if(!isNaN(s)&&m>0){if(s<0||s>m)bad=true;bs+=s;bm+=m}});
+ const ts=num('ts'),tm=num('tm'),hasT=ts!==null&&tm>0;
+ if(bad||!bm||(ts!==null&&(!(tm>0)||ts<0||ts>tm))){o.textContent='Деректерді тексеріңіз: кемінде бір БЖБ керек, ұпай максимумнан артық болмауы тиіс.';return}
+ if(md==='f'&&!fbs.length){o.textContent='ФБ қосылған тәсіл үшін кемінде бір ФБ бағасын қосыңыз.';return}
+ const pB=bs/bm*100,avg=fbs.length?fbs.reduce((a,b)=>a+b,0)/fbs.length:null,pF=avg!==null?avg*10:pB,W=md==='f'?[.25,.25,.5]:[0,.5,.5];
+ let h='';
+ if(md==='f')h+=`ФБ орташа: <b>${f2(avg)} / 10</b> = ${f2(pF)}% × 25% = <b>${f2(pF*W[0])}</b><br>`;
+ h+=`БЖБ: <b>${bs} / ${bm}</b> = ${f2(pB)}% × ${W[1]*100}% = <b>${f2(pB*W[1])}</b><br>`;
+ let pT=pB;
+ if(hasT){pT=ts/tm*100;const Q=W[0]*pF+W[1]*pB+W[2]*pT;
+  h+=`ТЖБ: <b>${ts} / ${tm}</b> = ${f2(pT)}% × ${W[2]*100}% = <b>${f2(pT*W[2])}</b><br><br>Тоқсандық көрсеткіш: <b>${f2(Q)}%</b>, баға: <b>${M(Q)}</b>`}
+ else if(tm>0){h+='<br>ТЖБ-дан қажетті ұпай:<br>';[[5,85],[4,65],[3,40]].forEach(([m,t])=>{const need=(t-W[0]*pF-W[1]*pB)/W[2],pts=Math.ceil(need/100*tm-1e-9);
+   h+=`«${m}» үшін (${t}%): `+(need<=0?'қазірдің өзінде жеткілікті':need>100?'мүмкін емес':`<b>${pts} / ${tm}</b> (${f2(pts/tm*100)}%)`)+'<br>'})}
+ else h+='<br>ТЖБ максимумын енгізсеңіз, қажетті ұпайды есептейміз.';
+ const p=sig(w[0]*pF/100+w[1]*pB/100+w[2]*pT/100+bi);$('pb').style.width=Math.round(p*100)+'%';$('pb').style.background=p>=.5?'var(--ok)':'var(--warn)';
+ h+=`<br><br>Модель болжамы: «4» немесе «5» алу ықтималдығы <b>${Math.round(p*100)}%</b>`+(hasT?'':' (ТЖБ нәтижесі БЖБ-ға тең деп алынды)')+'.';
+ o.innerHTML=h};
+</script>
+</body></html>
