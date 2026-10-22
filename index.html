@@ -254,12 +254,12 @@ inf:[
 //GEN-END
 let REM=[];
 const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
-const DEF='https://ejorabek-rgb.github.io/-/questions.json';
+const DEF='https://ejorabek-rgb.github.io/-2/questions.json';
 async function loadRemote(u){const st=$('us');st.textContent='Жүктелуде…';try{const r=await fetch(u,{cache:'no-store'});if(!r.ok){st.textContent='Файл табылмады (қате '+r.status+'). questions.json файлын осы мекенжайға жүктеңіз: '+u;return}const j=await r.json();
  REM=j.filter(x=>x&&x.q&&Array.isArray(x.o)&&x.o.length>1&&Number.isInteger(x.c)&&x.c>=0&&x.c<x.o.length&&['inf','mat','fiz'].includes(x.s)&&x.g>=7&&x.g<=11).map(x=>[+x.g,x.s,x.q,x.o,+x.c,x.e||'Түсіндірме берілмеген.',x.t||x.q]);
  st.textContent='Жаңартылды: '+REM.length+' сұрақ қосылды ('+new Date().toLocaleTimeString()+').';store.set('qurl',u)}catch(e){st.textContent='Жүктелмеді. Интернетті, сілтемені және JSON пішімін тексеріңіз.'}}
 $('ub').onclick=()=>{const u=$('uu').value.trim();if(u)loadRemote(u)};
-{const u=store.get('qurl')||DEF;$('uu').value=u;loadRemote(u)}
+{const saved=store.get('qurl');const u=!saved||saved==='https://ejorabek-rgb.github.io/-/questions.json'?DEF:saved;$('uu').value=u;loadRemote(u)}
 function compose(g,sb,n){const out=shuf(QS.concat(REM).filter(x=>x[0]==g&&x[1]==sb)).slice(0,Math.ceil(n/2));const gs=GEN[sb].filter(x=>x[0]<=Math.max(g,7));
  while(out.length<n){const f=gs[ri(0,gs.length-1)][1]();out.push([g,sb,f[0],f[1],f[2],f[3],f[4]])}return shuf(out)}
 async function webQs(sb,n){const c={inf:18,mat:19,fiz:17}[sb],d=decodeURIComponent;
